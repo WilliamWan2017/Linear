@@ -5,8 +5,19 @@ Spyder Editor
 
 This is a temporary script file.
 """
+from decimal import Decimal, getcontext
 import math
-from decimal import Decimal
+
+
+class MyDecimal(Decimal):
+    def is_near_zero(self,eps=1e-10):
+        if (abs(self)<eps):
+            return True
+        else:
+            return False
+
+getcontext().prec = 30 
+
 class Vector(object):
     def __init__(self, coordinates):
         try:
