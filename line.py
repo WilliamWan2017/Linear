@@ -80,12 +80,12 @@ class Line(object):
             terms = [write_coefficient(n[i],
                                        is_initial_term=(i == initial_index)) +
                      'x_{}'.format(i + 1)
-                     for i in range(self.dimension)
+                     for i in range(self.Dimension)
                      if round(n[i], num_decimal_places) != 0]
             output = ' '.join(terms)
 
         except Exception as e:
-            if str(e) == self.NO_NONZERO_ELTS_FOUND_MSG:
+            if str(e) == self.NO_NONZERO_ELMT_FOUND_MSG:
                 output = '0'
             else:
                 raise e
@@ -141,29 +141,32 @@ class Line(object):
         y_num=(-c*k1+a*k2)
         return Vector([x_num,y_num]).times_scalar(one_over_denom)
 
-line1 = Line(Vector([1, 2]), 4)
-line2 = Line(Vector([2 , 5]), 9)
 
-print ('first system instersects in:' )
-print (line1.intersection(line2))
+if __name__ == '__main__':
+    line1 = Line(Vector([1, 2]), 4)
+    line2 = Line(Vector([2 , 5]), 9)
+
+    print ('first system instersects in:' )
+    print (line1.intersection(line2))
 
 
 # second system
 # 7.204x + 3.182y = 8.68
 # 8.172x + 4.114y = 9.883
 
-line3 = Line(Vector([7.204, 3.182]), 8.68)
-line4 = Line(Vector([8.172, 4.114]), 9.883)
+    line3 = Line(Vector([7.204, 3.182]), 8.68)
+    line4 = Line(Vector([8.172, 4.114]), 9.883)
+    print (str(line3))
 
-print ('second system instersects in: {}'.format(line3.intersection(line4)))
+    print ('second system instersects in: {}'.format(line3.intersection(line4)))
 
 # third system
 # 1.182x + 5.562y = 6.744
 # 1.773x + 8.343y = 9.525
 
-line5 = Line(Vector([1.182, 5.562]), 6.744)
-line6 = Line(Vector([1.773, 8.343]), 9.525)
+    line5 = Line(Vector([1.182, 5.562]), 6.744)
+    line6 = Line(Vector([1.773, 8.343]), 9.525)
 
-print ('third system instersects in: {}'.format(line5.intersection(line6)))
+    print ('third system instersects in: {}'.format(line5.intersection(line6)))
         
         

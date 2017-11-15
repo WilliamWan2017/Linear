@@ -40,6 +40,8 @@ class Vector(object):
     def is_zero(self):
         return set(self.coordinates)==set([Decimal(0)])
         
+    def __getitem__(self, i):
+        return self.coordinates[i]
     
     def plus(self,v):
         new_coordinates=[x+y for x,y in zip(self.coordinates,v.coordinates)]
