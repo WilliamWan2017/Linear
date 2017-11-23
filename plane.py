@@ -29,11 +29,11 @@ class Plane(object):
         try:
             
             n=self.normal_vector
-            c=self.constant_term
+            c=Decimal(self.constant_term)
             self.basepoint_coords=[0]*self.dimension
         
             init_index=Plane.first_nonzero_index(n)
-            init_coofficient=n.coordinates[init_index]
+            init_coofficient=Decimal(n.coordinates[init_index])
             self.basepoint_coords[init_index]=c/init_coofficient
         except Exception as e:
             if str(e)==Plane.NO_NONZERO_ELMT_FOUND_MSG:

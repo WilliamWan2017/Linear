@@ -9,11 +9,11 @@ from decimal import Decimal,getcontext
 from vector import Vector,MyDecimal
 getcontext().prec=30
 
-class Hyperplane(object):
-    NO_NONZERO_ELMT_MSG="No Nonzero element was found"
+class Hyperplane(object): 
+    NO_NONZERO_ELMT_FOUND_MSG="No Nonzero element was found"
     EITHER_DIMENSION_OR_NORMAL_VECTOR_MUST_BE_PROVIDED_MSG=" Either dimension or normal vector must be provided"
     
-    def __init__(self,dimension,normal_vector,contant_term):
+    def __init__(self,dimension,normal_vector,constant_term):
         if not dimension and not normal_vector:
             raise Exception(self.EITHER_DIMENSION_OR_NORMAL_VECTOR_MUST_BE_PROVIDED)
         if not normal_vector:
@@ -23,22 +23,22 @@ class Hyperplane(object):
         else:
             self.dimension=normal_vector.dimension
         self.normal_vector=normal_vector
-        if not contant_term:
-            contant_term=Decimal(0)
-        self.contant_term=decimal(contant_term)
+        if not constant_term:
+            constant_term=Decimal(0)
+        self.constant_term=Decimal(constant_term)
         self.set_basepoint()
         
-    def set_basepoint():
+    def set_basepoint(self):
         try:
             n=self.normal_vector
-            c=self.contant_term
+            c=self.constant_term
             basepoint_coordis=[0]*self.dimension
             initial_index=Hyperplane.first_nonzero_index(n)
-            initial_coofficient=n[initial_coofficint]
+            initial_coofficient=n[initial_index]
             basepoint_coordis[initial_index]=c/initial_coofficient
-            self.basepoint=Vector(basepoing_coordis)
+            self.basepoint=Vector(basepoint_coordis)
         except Exception as e :
-            if (e)==Hyperplane.NO_NONZERO_ELMT_MSG:
+            if (e)==Hyperplane.NO_NONZERO_ELMT_FOUND_MSG:
                 self.basepoint=None
             else:
                 raise(e)
@@ -68,7 +68,7 @@ class Hyperplane(object):
             term=[write_coofficient(n[i],is_initial_term=i==initial_term)+'x_{}'.format(i+1) for i in range(self.dimension) if round(n[i],num_decimal_places)!=0]
             output=' '.join(term)
         except Exception as e:
-            if str(e) == self.NO_NONZERO_ELTS_FOUND_MSG:
+            if str(e) == self.NO_NONZERO_ELMT_FOUND_MSG:
                 output = '0'
             else:
                 raise e
@@ -80,7 +80,7 @@ class Hyperplane(object):
 
         return output
     def is_parallel(self, plane2):
-        return self.normal_vector.is_parallel(plane2.normal_vector)
+        return self.normal_vector.is_parallel_to(plane2.normal_vector)
 
     def __eq__(self, plane2):
         if self.normal_vector.is_zero():
@@ -108,7 +108,7 @@ class Hyperplane(object):
         for k, item in enumerate(iterable):
             if not MyDecimal(item).is_near_zero():
                 return k
-        raise Exception(Hyperplane.NO_NONZERO_ELTS_FOUND_MSG)
+        raise Exception(Hyperplane.NO_NONZERO_ELMT_FOUND_MSG)
 
             
             

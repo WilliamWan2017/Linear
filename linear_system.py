@@ -9,16 +9,15 @@ Created on Mon Nov 20 14:42:24 2017
 from copy import deepcopy
 from decimal import Decimal,getcontext
 from vector import Vector,MyDecimal
-from panel import Panel
-from hyperpanel import Hyperpanel
-
+from plane import Plane
+from hyperplane import Hyperplane
 getcontext().prec=30
-def _get_new_place(coofficient,plane):
-    new_vector_normal=plane.vector_normal.scale_time(coofficient)
-    return Hyperplane(vector_noral=new_vector_normal,constant_term=plane.constant_term*coofficient)
+def _get_new_plane(coofficient,plane):
+    new_vector_normal=plane.normal_vector.times_scalar(coofficient)
+    return Hyperplane(dimension=new_vector_normal.dimension, normal_vector=new_vector_normal,constant_term=plane.constant_term*coofficient)
 
 
-class linear_system(object):
+class LinearSystem(object):
     ALL_PANELS_MUST_BE_IN_SAME_DIM_MSG=(" All Panels in the solution should be in the same dimension")
     NO_SOLUTIONS_MSG="No Solutions"
     INF_SOLUTIONS_MSG="Infinitely solutions"
@@ -30,7 +29,7 @@ class linear_system(object):
             self.dimension=d
             self.planes=planes
         except AssertionError:
-            raise(linear_system.ALL_PANELS_MUST_BE_IN_SAME_DIM_MSG)  
+            raise(LinearSystem.ALL_PANELS_MUST_BE_IN_SAME_DIM_MSG)  
     
     def __len__(self):
         return len(self.planes)
@@ -38,12 +37,12 @@ class linear_system(object):
     def __getitem__(self,i):
         return self.planes[i]
     
-    def __setitem(self,plane,i):
+    def __setitem__(self,i,plane):
         try:
             assert plane.dimension==self.dimension
             self.planes[i]=plane
         except AssertionError:
-            raise(linear_system.ALL_PANELS_MUST_BE_IN_SAME_DIM_MSG)
+            raise(LinearSystem.ALL_PANELS_MUST_BE_IN_SAME_DIM_MSG)
             
     def __str__(self):
         ret="Linear System:\n"
@@ -51,13 +50,13 @@ class linear_system(object):
         ret +='\n'.join(temp)
         return ret
     
-    def swap(self,row1,row2):
+    def swap_rows(self,row1,row2):
         self.planes[row1],self.planes[row2]=self.planes[row2],self.planes[row1]
         
     def multify_coofficient_and_row(self,coofficient,row):
         self[row]=_get_new_plane(coofficient,self[row])
         
-    def add_multify_time_row_to_row(self,coofficient,row_to_add ,row_to_be_add_to):
+    def add_multiple_times_row_to_row(self,coofficient,row_to_add ,row_to_be_add_to):
         receipt_row=self[row_to_be_add_to]
         new_plane=self.multify_coofficient_and_row(coofficient,row_to_add)
         new_vector_normal=receipt_row.vector_normal.plus(new_plane.vector_normal)
@@ -172,8 +171,9 @@ class linear_system(object):
                     raise(e)
     def raise_exception_if_too_few_pivots(self):
         pivot_indices=self.indices_of_first_nonzero_terms_each_row()
-        num_pivots=sum(1 if  index >=0 else 0 for index in pivot_indices)
-        num_variables＝self.dimension
+        num_pivots=sum([1 if  index >=0 else 0 for index in pivot_indices])
+        #num_variables＝self.dimension
+        num_variables=self.planes.dimension
         if (num_pivots<num_variables):
             raise Exception(self.INF_SOLUTIONS_MSG)
         
@@ -181,7 +181,7 @@ class linear_system(object):
         try:
             return self.do_gaussian_elimination_and_parametrization();
         except Exception as e:
-            if str(e)=self.NO_SOLUTION_MSG:
+            if str(e)==self.NO_SOLUTION_MSG:
                 return str(e)
             else:
                 raise e
@@ -243,42 +243,42 @@ p3 = Plane(normal_vector=Vector(['1', '0', '-2']), constant_term='2')
 s = LinearSystem([p0, p1, p2, p3])
 s.swap_rows(0, 1)
 if not (s[0] == p1 and s[1] == p0 and s[2] == p2 and s[3] == p3):
-    print 'test case 1 failed'
+    print ('test case 1 failed')
 
 s.swap_rows(1, 3)
 if not (s[0] == p1 and s[1] == p3 and s[2] == p2 and s[3] == p0):
-    print 'test case 2 failed'
+    print ('test case 2 failed')
 
 s.swap_rows(3, 1)
 if not (s[0] == p1 and s[1] == p0 and s[2] == p2 and s[3] == p3):
-    print 'test case 3 failed'
+    print ('test case 3 failed')
 
-s.multiply_coefficient_and_row(1, 0)
+s.multify_coofficient_and_row(1, 0)
 if not (s[0] == p1 and s[1] == p0 and s[2] == p2 and s[3] == p3):
-    print 'test case 4 failed'
+    print ('test case 4 failed')
 
-s.multiply_coefficient_and_row(-1, 2)
+s.multify_coofficient_and_row(-1, 2)
 new_s2 = Plane(normal_vector=Vector(['-1', '-1', '1']), constant_term='-3')
 if not (s[0] == p1 and
         s[1] == p0 and
         s[2] == new_s2 and
         s[3] == p3):
-    print 'test case 5 failed'
+    print ('test case 5 failed')
 
-s.multiply_coefficient_and_row(10, 1)
+s.multify_coofficient_and_row(10, 1)
 new_s1 = Plane(normal_vector=Vector(['10', '10', '10']), constant_term='10')
 if not (s[0] == p1 and
         s[1] == new_s1 and
         s[2] == new_s2 and
         s[3] == p3):
-    print 'test case 6 failed'
+    print ('test case 6 failed')
 
 s.add_multiple_times_row_to_row(0, 0, 1)
 if not (s[0] == p1 and
         s[1] == new_s1 and
         s[2] == new_s2 and
         s[3] == p3):
-    print 'test case 7 failed'
+    print ('test case 7 failed')
 
 s.add_multiple_times_row_to_row(1, 0, 1)
 added_s1 = Plane(normal_vector=Vector(['10', '11', '10']), constant_term='12')
@@ -286,7 +286,7 @@ if not (s[0] == p1 and
         s[1] == added_s1 and
         s[2] == new_s2 and
         s[3] == p3):
-    print 'test case 8 failed'
+    print ('test case 8 failed')
 
 s.add_multiple_times_row_to_row(-1, 1, 0)
 new_s0 = Plane(normal_vector=Vector(['-10', '-10', '-10']),
@@ -295,7 +295,7 @@ if not (s[0] == new_s0 and
         s[1] == added_s1 and
         s[2] == new_s2 and
         s[3] == p3):
-    print 'test case 9 failed'
+    print ('test case 9 failed')
 
 p1 = Plane(normal_vector=Vector(['1', '1', '1']), constant_term='1')
 p2 = Plane(normal_vector=Vector(['0', '1', '1']), constant_term='2')
@@ -303,7 +303,7 @@ s = LinearSystem([p1, p2])
 t = s.compute_triangular_form()
 if not (t[0] == p1 and
         t[1] == p2):
-    print 'test case 1 failed'
+    print ('test case 1 failed')
 
 p1 = Plane(normal_vector=Vector(['1', '1', '1']), constant_term='1')
 p2 = Plane(normal_vector=Vector(['1', '1', '1']), constant_term='2')
@@ -311,7 +311,7 @@ s = LinearSystem([p1, p2])
 t = s.compute_triangular_form()
 if not (t[0] == p1 and
         t[1] == Plane(constant_term='1')):
-    print 'test case 2 failed'
+    print ('test case 2 failed')
 
 p1 = Plane(normal_vector=Vector(['1', '1', '1']), constant_term='1')
 p2 = Plane(normal_vector=Vector(['0', '1', '0']), constant_term='2')
@@ -324,7 +324,7 @@ if not (t[0] == p1 and
         t[2] == Plane(normal_vector=Vector(['0', '0', '-2']),
                       constant_term='2') and
         t[3] == Plane()):
-    print 'test case 3 failed'
+    print ('test case 3 failed')
 
 p1 = Plane(normal_vector=Vector(['0', '1', '1']), constant_term='1')
 p2 = Plane(normal_vector=Vector(['1', '-1', '1']), constant_term='2')
@@ -337,7 +337,7 @@ if not (t[0] == Plane(normal_vector=Vector(['1', '-1', '1']),
                       constant_term='1') and
         t[2] == Plane(normal_vector=Vector(['0', '0', '-9']),
                       constant_term='-2')):
-    print 'test case 4 failed'
+    print ('test case 4 failed')
 
 
 # ***************
@@ -349,7 +349,7 @@ r = s.compute_rref()
 if not (r[0] == Plane(normal_vector=Vector(['1', '0', '0']),
                       constant_term='-1') and
         r[1] == p2):
-    print 'test case 1 failed'
+    print ('test case 1 failed')
 
 p1 = Plane(normal_vector=Vector(['1', '1', '1']), constant_term='1')
 p2 = Plane(normal_vector=Vector(['1', '1', '1']), constant_term='2')
@@ -357,7 +357,7 @@ s = LinearSystem([p1, p2])
 r = s.compute_rref()
 if not (r[0] == p1 and
         r[1] == Plane(constant_term='1')):
-    print 'test case 2 failed'
+    print ('test case 2 failed')
 
 p1 = Plane(normal_vector=Vector(['1', '1', '1']), constant_term='1')
 p2 = Plane(normal_vector=Vector(['0', '1', '0']), constant_term='2')
@@ -371,7 +371,7 @@ if not (r[0] == Plane(normal_vector=Vector(['1', '0', '0']),
         r[2] == Plane(normal_vector=Vector(['0', '0', '-2']),
                       constant_term='2') and
         r[3] == Plane()):
-    print 'test case 3 failed'
+    print ('test case 3 failed')
 
 p1 = Plane(normal_vector=Vector(['0', '1', '1']), constant_term='1')
 p2 = Plane(normal_vector=Vector(['1', '-1', '1']), constant_term='2')
@@ -384,14 +384,14 @@ if not (r[0] == Plane(normal_vector=Vector(['1', '0', '0']),
                       constant_term=Decimal('7') / Decimal('9')) and
         r[2] == Plane(normal_vector=Vector(['0', '0', '1']),
                       constant_term=Decimal('2') / Decimal('9'))):
-    print 'test case 4 failed'
+    print ('test case 4 failed')
 
 
 # first system
 p1 = Plane(Vector([5.862, 1.178, -10.366]), -8.15)
 p2 = Plane(Vector([-2.931, -0.589, 5.183]), -4.075)
 system1 = LinearSystem([p1, p2])
-print 'first system: {}'.format(system1.do_gaussian_elimination())
+print ('first system: {}'.format(system1.do_gaussian_elimination()))
 
 
 # # second system
@@ -399,7 +399,7 @@ p1 = Plane(Vector([8.631, 5.112, -1.816]), -5.113)
 p2 = Plane(Vector([4.315, 11.132, -5.27]), -6.775)
 p3 = Plane(Vector([-2.158, 3.01, -1.727]), -0.831)
 system2 = LinearSystem([p1, p2, p3])
-print 'second system: {}'.format(system2.do_gaussian_elimination())
+print ('second system: {}'.format(system2.do_gaussian_elimination()))
 
 
 # third system
@@ -408,7 +408,7 @@ p2 = Plane(Vector([5.111, 6.358, 7.638]), -2.152)
 p3 = Plane(Vector([2.016, -9.924, -1.367]), -9.278)
 p4 = Plane(Vector([2.167, -13.543, -18.883]), -10.567)
 system3 = LinearSystem([p1, p2, p3, p4])
-print 'thrid system: {} '.format(system3.do_gaussian_elimination())
+print ('thrid system: {} '.format(system3.do_gaussian_elimination()))
 
 
 class Parametrization(object):
@@ -447,7 +447,7 @@ p1 = Plane(normal_vector=Vector([0.786, 0.786, 0.588]), constant_term=-0.714)
 p2 = Plane(normal_vector=Vector([-0.131, -0.131, 0.244]), constant_term=0.319)
 
 system = LinearSystem([p1, p2])
-print system.compute_solution()
+print (system.compute_solution())
 
 
 p1 = Plane(Vector([8.631, 5.112, -1.816]), -5.113)
@@ -455,14 +455,14 @@ p2 = Plane(Vector([4.315, 11.132, -5.27]), -6.775)
 p3 = Plane(Vector([-2.158, 3.01, -1.727]), -0.831)
 
 system = LinearSystem([p1, p2, p3])
-print system.compute_solution()
+print (system.compute_solution())
 
 p1 = Plane(Vector([0.935, 1.76, -9.365]), -9.955)
 p2 = Plane(Vector([0.187, 0.352, -1.873]), -1.991)
 p3 = Plane(Vector([0.374, 0.704, -3.746]), -3.982)
 p4 = Plane(Vector([-0.561, -1.056, 5.619]), 5.973)
 
-print system.compute_solution()
+print (system.compute_solution())
 
 
 # The systems bellow are just to test hyperplanes
@@ -471,7 +471,7 @@ p1 = Hyperplane(normal_vector=Vector([0.786, 0.786]), constant_term=0.786)
 p2 = Hyperplane(normal_vector=Vector([-0.131, -0.131]), constant_term=-0.131)
 
 system = LinearSystem([p1, p2])
-print system.compute_solution()
+print (system.compute_solution())
 
 
 p1 = Hyperplane(normal_vector=Vector([2.102, 7.489, -0.786]),
@@ -482,7 +482,7 @@ p3 = Hyperplane(normal_vector=Vector([9.015, 5.873, -1.105]),
                 constant_term=-0.831)
 
 system = LinearSystem([p1, p2, p3])
-print system.compute_solution()
+print (system.compute_solution())
 
 p1 = Hyperplane(normal_vector=Vector([0.786, 0.786, 8.123, 1.111, -8.363]),
                 constant_term=-9.955)
@@ -492,6 +492,6 @@ p3 = Hyperplane(normal_vector=Vector([9.015, -5.873, -1.105, 2.013, -2.802]),
                 constant_term=-3.982)
 
 system = LinearSystem([p1, p2, p3])
-print system.compute_solution()
+print (system.compute_solution())
         
         

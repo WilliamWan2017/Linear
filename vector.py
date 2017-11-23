@@ -53,11 +53,12 @@ class Vector(object):
     
     
     def times_scalar(self,c):
-        new_coordinates=[c*x for x in self.coordinates]
+        c_decimal=Decimal(c)
+        new_coordinates=[c_decimal*Decimal(x) for x in self.coordinates]
         return Vector(new_coordinates)
         
     def magnitude(self):
-        new_coordinates=[x**2 for x in self.coordinates]
+        new_coordinates=[Decimal(x)**2 for x in self.coordinates]
         return math.sqrt(sum(new_coordinates))
     
     def normalized(self):
@@ -73,10 +74,11 @@ class Vector(object):
     def get_anger_radio(self ,other):
         self_normalized=self.normalized();
         other_normalized=other.normalized();
-        return round(self_normalized.dot_product(other_normalized),3)
+        return Decimal(round(self_normalized.dot_product(other_normalized),3))
     
     def get_anger_degree(self,other):
-        degrees_per_radio=180.0/math.pi
+        degrees_per_radio=Decimal(180.0/math.pi)
+        
         return self.get_anger_radio(other)*degrees_per_radio;
     
     def is_parallel_to(self,other):
