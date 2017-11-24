@@ -13,8 +13,8 @@ from plane import Plane
 from hyperplane import Hyperplane
 getcontext().prec=30
 def _get_new_plane(coofficient,plane):
-    new_vector_normal=plane.normal_vector.times_scalar(coofficient)
-    return Hyperplane(dimension=new_vector_normal.dimension, normal_vector=new_vector_normal,constant_term=plane.constant_term*coofficient)
+    new_normal_vector=plane.normal_vector.times_scalar(coofficient)
+    return Hyperplane(dimension=new_normal_vector.dimension, normal_vector=new_normal_vector,constant_term=Decimal(plane.constant_term)*Decimal(coofficient))
 
 
 class LinearSystem(object):
@@ -53,25 +53,28 @@ class LinearSystem(object):
     def swap_rows(self,row1,row2):
         self.planes[row1],self.planes[row2]=self.planes[row2],self.planes[row1]
         
-    def multify_coofficient_and_row(self,coofficient,row):
+    def multiply_coefficient_and_row(self,coofficient,row):
         self[row]=_get_new_plane(coofficient,self[row])
         
     def add_multiple_times_row_to_row(self,coofficient,row_to_add ,row_to_be_add_to):
-        receipt_row=self[row_to_be_add_to]
-        new_plane=self.multify_coofficient_and_row(coofficient,row_to_add)
-        new_vector_normal=receipt_row.vector_normal.plus(new_plane.vector_normal)
-        new_contant_term=receipt_row.contant_term+new_plane.contant_term
-        self[row_to_be_add_to]=Hyperplane(vector_normal=new_vector_normal,contant_term=new_contant_term)
+        try:
+            receipt_row=self[row_to_be_add_to]
+            new_plane=self.multiply_coefficient_and_row(coofficient,row_to_add)
+            new_normal_vector=receipt_row.normal_vector.plus(new_plane.normal_vector)
+            new_contant_term=receipt_row.contant_term+new_plane.contant_term
+            self[row_to_be_add_to]=Hyperplane(normal_vector=new_normal_vector,contant_term=new_contant_term)
+        except Exception as e:
+            return str(e)
     
-    def indices_of_first_nonzero_terms_each_row(self):
+    def indices_of_first_nonzero_terms_in_each_row(self):
         num_equation=len(self)
         indices=[-1]*num_equation
         for i,p in enumerate(self.planes):
             try:
-                p.first_nonzero_term(p.vector_normal)
-                indices[i]=p.first_nonzero_term(p.vector_normal)
+                p.first_nonzero_index(p.normal_vector)
+                indices[i]=p.first_nonzero_index(p.normal_vector)
             except Exception as e:
-                if str(e)==Plane.NO_NONZERO_ELMT_MSG:
+                if str(e)==Plane.NO_NONZERO_ELMT_FOUND_MSG:
                     continue;
                 else:
                     raise (e)
@@ -117,14 +120,14 @@ class LinearSystem(object):
 
         for row_to_be_added_to in range(row + 1, num_equations):
             n = self[row_to_be_added_to].normal_vector
-            gamma = n[col]
+            gamma = Decimal(n[col])
             alpha = -gamma / beta
             self.add_multiple_times_row_to_row(alpha, row, row_to_be_added_to)
 
     def clear_coefficients_above(self, row, col):
         for row_to_be_added_to in range(row)[::-1]:
             n = self[row_to_be_added_to].normal_vector
-            alpha = -(n[col])
+            alpha = -Decimal(n[col])
             self.add_multiple_times_row_to_row(alpha, row, row_to_be_added_to)
 
     def compute_rref(self):
@@ -144,16 +147,16 @@ class LinearSystem(object):
 
     def scale_row_to_make_coefficient_equal_one(self, row, col):
         n = self[row].normal_vector
-        beta = Decimal('1.0') / n[col]
+        beta = Decimal('1.0') / Decimal(n[col])
         self.multiply_coefficient_and_row(beta, row)
         
-    def do_guassian_elimination(self):
+    def do_gaussian_elimination(self):
         rref=self.compute_rref()
         try:
             self.raise_execption_if_contradictory_equation()
             self.raise_exception_if_too_few_pivots()
         except Exception as e:
-            return e.message
+            return str(e)
         num_variables=rref.dimension
         solution_coordinates=[rref.planes[i].contant_term for i in range(num_variables)]
         return Vector(solution_coordinates)
@@ -161,7 +164,7 @@ class LinearSystem(object):
     def raise_execption_if_contradictory_equation(self):
         for plane in self.planes:
             try:
-                plane.first_nonzero_index()
+                plane.first_nonzero_index(plane.normal_vector)
             except Exception as e:
                 if str(e)==Plane.NO_NONZERO_ELMT_FOUND_MSG:
                     tmp_contant=MyDecimal(plane.constant_term)
@@ -170,7 +173,7 @@ class LinearSystem(object):
                 else:
                     raise(e)
     def raise_exception_if_too_few_pivots(self):
-        pivot_indices=self.indices_of_first_nonzero_terms_each_row()
+        pivot_indices=self.indices_of_first_nonzero_terms_in_each_row()
         num_pivots=sum([1 if  index >=0 else 0 for index in pivot_indices])
         #num_variables＝self.dimension
         num_variables=self.planes.dimension
@@ -181,7 +184,7 @@ class LinearSystem(object):
         try:
             return self.do_gaussian_elimination_and_parametrization();
         except Exception as e:
-            if str(e)==self.NO_SOLUTION_MSG:
+            if str(e)==self.NO_SOLUTIONS_MSG:
                 return str(e)
             else:
                 raise e
@@ -189,24 +192,24 @@ class LinearSystem(object):
         rref=self.compute_rref()
         rref.raise_execption_if_contradictory_equation()
         direction_vector=self.extract_direction_vector_for_parametrization()
-        basepoint_vector=self.extract_basepoint_vecotr_for_parametrization()
+        basepoint_vector=self.extract_basepoint_vector_for_parametrization()
         return Parametrization(basepoint_vector,direction_vector)
     
     def extract_direction_vector_for_parametrization(self):
         num_variables=self.dimension
-        povit_indices=self.indices_of_first_nonzero_terms_each_row()
-        freedom_variables_indices=set(range(num_variables))-set(povit_indices)
-        director_vector=[]
-        for free_var in range(freedom_variables_indices):
+        pivot_indices=self.indices_of_first_nonzero_terms_in_each_row()
+        freedom_variables_indices=set(range(num_variables))-set(pivot_indices)
+        direction_vectors=[]
+        for free_var in (freedom_variables_indices):
             vector_coordinates=[0]*num_variables
             vector_coordinates[free_var]=1
             for index,plane in enumerate(self.planes):
                 pivot_var = pivot_indices[index]
                 if pivot_var < 0:
                     break
-                vector_coords[pivot_var] = -plane.normal_vector[free_var]
+                vector_coordinates[pivot_var] = -plane.normal_vector[free_var]
 
-            direction_vectors.append(Vector(vector_coords))
+            direction_vectors.append(Vector(vector_coordinates))
 
         return direction_vectors
         
@@ -253,11 +256,11 @@ s.swap_rows(3, 1)
 if not (s[0] == p1 and s[1] == p0 and s[2] == p2 and s[3] == p3):
     print ('test case 3 failed')
 
-s.multify_coofficient_and_row(1, 0)
+s.multiply_coefficient_and_row(1, 0)
 if not (s[0] == p1 and s[1] == p0 and s[2] == p2 and s[3] == p3):
     print ('test case 4 failed')
 
-s.multify_coofficient_and_row(-1, 2)
+s.multiply_coefficient_and_row(-1, 2)
 new_s2 = Plane(normal_vector=Vector(['-1', '-1', '1']), constant_term='-3')
 if not (s[0] == p1 and
         s[1] == p0 and
@@ -265,7 +268,7 @@ if not (s[0] == p1 and
         s[3] == p3):
     print ('test case 5 failed')
 
-s.multify_coofficient_and_row(10, 1)
+s.multiply_coefficient_and_row(10, 1)
 new_s1 = Plane(normal_vector=Vector(['10', '10', '10']), constant_term='10')
 if not (s[0] == p1 and
         s[1] == new_s1 and
@@ -467,28 +470,28 @@ print (system.compute_solution())
 
 # The systems bellow are just to test hyperplanes
 
-p1 = Hyperplane(normal_vector=Vector([0.786, 0.786]), constant_term=0.786)
-p2 = Hyperplane(normal_vector=Vector([-0.131, -0.131]), constant_term=-0.131)
+p1 = Hyperplane(dimension=2,normal_vector=Vector([0.786, 0.786]), constant_term=0.786)
+p2 = Hyperplane(dimension=2,normal_vector=Vector([-0.131, -0.131]), constant_term=-0.131)
 
 system = LinearSystem([p1, p2])
 print (system.compute_solution())
 
 
-p1 = Hyperplane(normal_vector=Vector([2.102, 7.489, -0.786]),
+p1 = Hyperplane(dimension=3,normal_vector=Vector([2.102, 7.489, -0.786]),
                 constant_term=-5.113)
-p2 = Hyperplane(normal_vector=Vector([-1.131, 8.318, -1.209]),
+p2 = Hyperplane(dimension=3,normal_vector=Vector([-1.131, 8.318, -1.209]),
                 constant_term=-6.775)
-p3 = Hyperplane(normal_vector=Vector([9.015, 5.873, -1.105]),
+p3 = Hyperplane(dimension=3,normal_vector=Vector([9.015, 5.873, -1.105]),
                 constant_term=-0.831)
 
 system = LinearSystem([p1, p2, p3])
 print (system.compute_solution())
 
-p1 = Hyperplane(normal_vector=Vector([0.786, 0.786, 8.123, 1.111, -8.363]),
+p1 = Hyperplane(dimension=3,normal_vector=Vector([0.786, 0.786, 8.123, 1.111, -8.363]),
                 constant_term=-9.955)
-p2 = Hyperplane(normal_vector=Vector([0.131, -0.131, 7.05, -2.813, 1.19]),
+p2 = Hyperplane(dimension=3,normal_vector=Vector([0.131, -0.131, 7.05, -2.813, 1.19]),
                 constant_term=-1.991)
-p3 = Hyperplane(normal_vector=Vector([9.015, -5.873, -1.105, 2.013, -2.802]),
+p3 = Hyperplane(dimension=3,normal_vector=Vector([9.015, -5.873, -1.105, 2.013, -2.802]),
                 constant_term=-3.982)
 
 system = LinearSystem([p1, p2, p3])

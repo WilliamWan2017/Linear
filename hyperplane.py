@@ -34,7 +34,7 @@ class Hyperplane(object):
             c=self.constant_term
             basepoint_coordis=[0]*self.dimension
             initial_index=Hyperplane.first_nonzero_index(n)
-            initial_coofficient=n[initial_index]
+            initial_coofficient=Decimal(n[initial_index])
             basepoint_coordis[initial_index]=c/initial_coofficient
             self.basepoint=Vector(basepoint_coordis)
         except Exception as e :
